@@ -1,85 +1,91 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Alert,
-  TouchableOpacity,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, StyleSheet, Alert } from 'react-native';
 import { Pedometer } from 'expo-sensors';
-import { useAuth } from '../contexts/AuthContext';
-import { saveStepsToDatabase } from '../services/database';
-import { Colors, Typography } from '../styles';
+import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 
 const HomeScreen = () => {
   const [stepCount, setStepCount] = useState(0);
-  const [isPedometerAvailable, setIsPedometerAvailable] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const [isPedometerAvailable, setIsPedometerAvailable] = useState('checking');
+  const [userData, setUserData] = useState(null);
 
   useEffect(() => {
     checkPedometerPermission();
-    subscribeToStepCounter();
+    subscribeToStepCount();
+    fetchUserData();
   }, []);
 
+  // ペドメーターの権限チェック
   const checkPedometerPermission = async () => {
     try {
       const result = await Pedometer.isAvailableAsync();
-      setIsPedometerAvailable(result);
+      setIsPedometerAvailable(result ? 'available' : 'not available');
     } catch (error) {
+      setIsPedometerAvailable('not available');
       Alert.alert('Error', 'Failed to check pedometer permission');
-      console.error(error);
-    } finally {
-      setLoading(false);
     }
   };
 
-  const subscribeToStepCounter = () => {
+  // 歩数のサブスクリプション設定
+  const subscribeToStepCount = () => {
     const end = new Date();
     const start = new Date();
     start.setDate(end.getDate() - 1);
 
     const subscription = Pedometer.watchStepCount(result => {
       setStepCount(result.steps);
-      if (user) {
-        saveStepsToDatabase(user.uid, result.steps);
-      }
+      saveStepCountToFirestore(result.steps);
     });
 
     return () => subscription && subscription.remove();
   };
 
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-      </View>
-    );
-  }
+  // ユーザーデータの取得
+  const fetchUserData = async () => {
+    try {
+      const user = auth().currentUser;
+      if (user) {
+        const userDoc = await firestore()
+          .collection('users')
+          .doc(user.uid)
+          .get();
+        setUserData(userDoc.data());
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to fetch user data');
+    }
+  };
 
-  if (!isPedometerAvailable) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.errorText}>
-          Pedometer is not available on this device
-        </Text>
-      </View>
-    );
-  }
+  // 歩数データの保存
+  const saveStepCountToFirestore = async (steps) => {
+    try {
+      const user = auth().currentUser;
+      if (user) {
+        await firestore()
+          .collection('stepCounts')
+          .doc(user.uid)
+          .set({
+            steps,
+            timestamp: firestore.FieldValue.serverTimestamp(),
+          }, { merge: true });
+      }
+    } catch (error) {
+      console.error('Error saving step count:', error);
+    }
+  };
 
   return (
     <View style={styles.container}>
-      <View style={styles.stepsContainer}>
-        <Text style={styles.stepCount}>{stepCount}</Text>
-        <Text style={styles.stepsLabel}>Steps Today</Text>
-      </View>
-
-      <TouchableOpacity
-        style={styles.syncButton}
-        onPress={subscribeToStepCounter}>
-        <Text style={styles.syncButtonText}>Sync Steps</Text>
-      </TouchableOpacity>
+      <Text style={styles.title}>Step Counter</Text>
+      <Text style={styles.status}>
+        Pedometer status: {isPedometerAvailable}
+      </Text>
+      <Text style={styles.steps}>Steps today: {stepCount}</Text>
+      {userData && (
+        <Text style={styles.userData}>
+          Welcome, {userData.name || 'User'}!
+        </Text>
+      )}
     </View>
   );
 };
@@ -89,37 +95,25 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Colors.background,
+    backgroundColor: '#f5f5f5',
   },
-  stepsContainer: {
-    alignItems: 'center',
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
     marginBottom: 20,
   },
-  stepCount: {
-    fontSize: Typography.extraLarge,
-    fontWeight: 'bold',
-    color: Colors.primary,
+  status: {
+    fontSize: 16,
+    marginBottom: 10,
   },
-  stepsLabel: {
-    fontSize: Typography.medium,
-    color: Colors.textSecondary,
+  steps: {
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: 20,
   },
-  syncButton: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  syncButtonText: {
-    color: Colors.white,
-    fontSize: Typography.medium,
-    fontWeight: 'bold',
-  },
-  errorText: {
-    color: Colors.error,
-    fontSize: Typography.medium,
-    textAlign: 'center',
-    padding: 20,
+  userData: {
+    fontSize: 18,
+    color: '#666',
   },
 });
 

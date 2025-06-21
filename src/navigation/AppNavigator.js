@@ -1,13 +1,13 @@
-// AppNavigator.js
+// src/navigation/AppNavigator.js
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { useAuth } from '../context/AuthContext';
+import { useSelector } from 'react-redux';
 
 // Screens
-import LoginScreen from '../screens/auth/LoginScreen';
-import RegisterScreen from '../screens/auth/RegisterScreen';
+import LoginScreen from '../screens/LoginScreen';
+import SignUpScreen from '../screens/SignUpScreen';
 import HomeScreen from '../screens/HomeScreen';
 import StepCountScreen from '../screens/StepCountScreen';
 import ProfileScreen from '../screens/ProfileScreen';
@@ -16,12 +16,12 @@ import SettingsScreen from '../screens/SettingsScreen';
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Main tab navigation for authenticated users
+// Tab Navigator for authenticated users
 const TabNavigator = () => {
   return (
     <Tab.Navigator
       screenOptions={{
-        headerShown: false,
+        headerShown: true,
         tabBarActiveTintColor: '#007AFF',
         tabBarInactiveTintColor: 'gray',
       }}
@@ -31,7 +31,7 @@ const TabNavigator = () => {
         component={HomeScreen}
         options={{
           tabBarIcon: ({ color }) => (
-            <Icon name="home" size={24} color={color} />
+            <MaterialCommunityIcons name="home" color={color} size={26} />
           ),
         }}
       />
@@ -40,7 +40,7 @@ const TabNavigator = () => {
         component={StepCountScreen}
         options={{
           tabBarIcon: ({ color }) => (
-            <Icon name="walk" size={24} color={color} />
+            <MaterialCommunityIcons name="walk" color={color} size={26} />
           ),
         }}
       />
@@ -49,7 +49,7 @@ const TabNavigator = () => {
         component={ProfileScreen}
         options={{
           tabBarIcon: ({ color }) => (
-            <Icon name="person" size={24} color={color} />
+            <MaterialCommunityIcons name="account" color={color} size={26} />
           ),
         }}
       />
@@ -58,7 +58,7 @@ const TabNavigator = () => {
         component={SettingsScreen}
         options={{
           tabBarIcon: ({ color }) => (
-            <Icon name="settings" size={24} color={color} />
+            <MaterialCommunityIcons name="cog" color={color} size={26} />
           ),
         }}
       />
@@ -66,38 +66,26 @@ const TabNavigator = () => {
   );
 };
 
-// Root navigation
+// Main App Navigator
 const AppNavigator = () => {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return <LoadingScreen />;
-  }
+  const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
 
   return (
     <NavigationContainer>
-      <Stack.Navigator>
-        {user ? (
-          // Authenticated stack
-          <Stack.Screen
-            name="Main"
-            component={TabNavigator}
-            options={{ headerShown: false }}
-          />
-        ) : (
-          // Non-authenticated stack
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        {!isAuthenticated ? (
+          // Auth Stack
           <>
-            <Stack.Screen
-              name="Login"
-              component={LoginScreen}
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="Register"
-              component={RegisterScreen}
-              options={{ headerShown: false }}
-            />
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="SignUp" component={SignUpScreen} />
           </>
+        ) : (
+          // Main App Stack
+          <Stack.Screen name="MainApp" component={TabNavigator} />
         )}
       </Stack.Navigator>
     </NavigationContainer>

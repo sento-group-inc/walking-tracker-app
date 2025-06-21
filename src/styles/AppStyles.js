@@ -1,122 +1,120 @@
-// src/styles/AppStyles.js
-
 import { StyleSheet, Dimensions } from 'react-native';
 
-// Get device dimensions
-const { width, height } = Dimensions.get('window');
+const windowWidth = Dimensions.get('window').width;
+const windowHeight = Dimensions.get('window').height;
 
-// Define common colors
-const colors = {
-  primary: '#4A90E2',
-  secondary: '#F5A623',
-  background: '#F8F8F8',
-  white: '#FFFFFF',
-  black: '#000000',
-  gray: '#8E8E93',
-  error: '#FF3B30',
-  success: '#4CD964'
-};
-
-// Define common metrics
-const metrics = {
-  padding: 15,
-  borderRadius: 8,
-  screenWidth: width,
-  screenHeight: height
-};
-
-export default StyleSheet.create({
-  // Container styles
+export const AppStyles = StyleSheet.create({
+  // コンテナスタイル
   container: {
     flex: 1,
-    backgroundColor: colors.background
+    backgroundColor: '#FFFFFF',
   },
-  centeredContainer: {
+  
+  // 認証関連スタイル
+  authContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.background
-  },
-
-  // Authentication styles
-  authContainer: {
-    padding: metrics.padding,
-    backgroundColor: colors.white,
-    borderRadius: metrics.borderRadius,
-    width: '90%',
-    maxWidth: 400
+    padding: 20,
   },
   input: {
+    width: '100%',
     height: 50,
     borderWidth: 1,
-    borderColor: colors.gray,
-    borderRadius: metrics.borderRadius,
-    paddingHorizontal: metrics.padding,
-    marginBottom: 15
+    borderColor: '#CCCCCC',
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    marginBottom: 15,
   },
   button: {
-    backgroundColor: colors.primary,
-    padding: metrics.padding,
-    borderRadius: metrics.borderRadius,
-    alignItems: 'center'
+    width: '100%',
+    height: 50,
+    backgroundColor: '#4CAF50',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   buttonText: {
-    color: colors.white,
+    color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: 'bold'
+    fontWeight: 'bold',
   },
 
-  // Step counter styles
+  // 歩数計測関連スタイル
   stepCounter: {
+    alignItems: 'center',
+    padding: 20,
+  },
+  stepCount: {
     fontSize: 48,
     fontWeight: 'bold',
-    color: colors.primary
+    color: '#333333',
   },
   stepLabel: {
     fontSize: 18,
-    color: colors.gray,
-    marginTop: 10
+    color: '#666666',
+    marginTop: 10,
   },
 
-  // Card styles
-  card: {
-    backgroundColor: colors.white,
-    borderRadius: metrics.borderRadius,
-    padding: metrics.padding,
-    marginVertical: 8,
-    marginHorizontal: 16,
-    shadowColor: colors.black,
-    shadowOffset: {
-      width: 0,
-      height: 2
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5
+  // データ表示関連スタイル
+  dataContainer: {
+    padding: 15,
+  },
+  chart: {
+    marginVertical: 20,
+    borderRadius: 16,
+    padding: 10,
   },
 
-  // Error styles
+  // エラー表示スタイル
   errorText: {
-    color: colors.error,
-    fontSize: 14,
-    marginBottom: 10
+    color: '#FF0000',
+    textAlign: 'center',
+    marginTop: 10,
   },
 
-  // Loading styles
+  // ローディング表示スタイル
   loadingContainer: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
 
-  // Navigation styles
-  headerStyle: {
-    backgroundColor: colors.primary
+  // ナビゲーション関連スタイル
+  header: {
+    height: 60,
+    backgroundColor: '#4CAF50',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 15,
   },
-  headerTitleStyle: {
-    color: colors.white,
-    fontSize: 18,
-    fontWeight: 'bold'
-  }
+  headerTitle: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+
+  // プロフィール関連スタイル
+  profileContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  profileImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginBottom: 15,
+  },
+  profileName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
 });
+
+export default AppStyles;

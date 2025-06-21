@@ -1,18 +1,13 @@
 const reportWebVitals = onPerfEntry => {
   if (onPerfEntry && onPerfEntry instanceof Function) {
     import('web-vitals').then(({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {
-      // Cumulative Layout Shift
-      getCLS(onPerfEntry);
-      // First Input Delay
-      getFID(onPerfEntry);
-      // First Contentful Paint
-      getFCP(onPerfEntry);
-      // Largest Contentful Paint
-      getLCP(onPerfEntry);
-      // Time to First Byte
-      getTTFB(onPerfEntry);
+      getCLS(onPerfEntry); // Cumulative Layout Shift
+      getFID(onPerfEntry); // First Input Delay
+      getFCP(onPerfEntry); // First Contentful Paint
+      getLCP(onPerfEntry); // Largest Contentful Paint
+      getTTFB(onPerfEntry); // Time to First Byte
     }).catch(error => {
-      console.error('Failed to load web-vitals:', error);
+      console.error('Error loading web-vitals:', error);
     });
   }
 };

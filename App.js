@@ -1,59 +1,62 @@
+// App.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import { Pedometer } from 'expo-sensors';
 
 const App = () => {
-  const [isPedometerAvailable, setIsPedometerAvailable] = useState(false);
+  const [isPedometerAvailable, setIsPedometerAvailable] = useState('checking');
   const [stepCount, setStepCount] = useState(0);
   const [user, setUser] = useState(null);
 
-  // 認証状態の監視
+  // ペドメーターの可用性チェックと歩数計測開始
   useEffect(() => {
-    const unsubscribe = auth().onAuthStateChanged((user) => {
+    const subscribe = async () => {
+      try {
+        const isAvailable = await Pedometer.isAvailableAsync();
+        setIsPedometerAvailable(String(isAvailable));
+
+        if (isAvailable) {
+          const end = new Date();
+          const start = new Date();
+          start.setDate(end.getDate() - 1);
+
+          const subscription = Pedometer.watchStepCount(result => {
+            setStepCount(result.steps);
+          });
+
+          return () => subscription.remove();
+        }
+      } catch (error) {
+        Alert.alert('Error', 'Failed to access pedometer');
+      }
+    };
+
+    subscribe();
+  }, []);
+
+  // ユーザー認証状態の監視
+  useEffect(() => {
+    const unsubscribe = auth().onAuthStateChanged(user => {
       setUser(user);
       if (user) {
-        startPedometerTracking();
+        saveStepsToDatabase(user.uid, stepCount);
       }
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [stepCount]);
 
-  // 歩数計測の開始
-  const startPedometerTracking = async () => {
+  // データベースに歩数を保存
+  const saveStepsToDatabase = async (userId, steps) => {
     try {
-      const isAvailable = await Pedometer.isAvailableAsync();
-      setIsPedometerAvailable(isAvailable);
-
-      if (isAvailable) {
-        const subscription = Pedometer.watchStepCount(result => {
-          setStepCount(result.steps);
-          saveStepsToDatabase(result.steps);
-        });
-
-        return () => subscription.remove();
-      }
+      await firestore().collection('steps').doc(userId).set({
+        steps: steps,
+        timestamp: firestore.FieldValue.serverTimestamp(),
+      });
     } catch (error) {
-      console.error('Pedometer error:', error);
-    }
-  };
-
-  // データベースへの保存
-  const saveStepsToDatabase = async (steps) => {
-    try {
-      if (user) {
-        await firestore()
-          .collection('steps')
-          .doc(user.uid)
-          .set({
-            steps: steps,
-            timestamp: firestore.FieldValue.serverTimestamp(),
-          });
-      }
-    } catch (error) {
-      console.error('Database error:', error);
+      Alert.alert('Error', 'Failed to save steps data');
     }
   };
 
@@ -61,40 +64,24 @@ const App = () => {
   const handleLogin = async () => {
     try {
       const response = await auth().signInAnonymously();
-      console.log('Logged in:', response.user.uid);
+      setUser(response.user);
     } catch (error) {
-      console.error('Login error:', error);
-    }
-  };
-
-  // ログアウト処理
-  const handleLogout = async () => {
-    try {
-      await auth().signOut();
-      setStepCount(0);
-    } catch (error) {
-      console.error('Logout error:', error);
+      Alert.alert('Error', 'Failed to login');
     }
   };
 
   return (
     <View style={styles.container}>
-      {!user ? (
+      <Text style={styles.title}>Step Counter</Text>
+      <Text style={styles.status}>
+        Pedometer available: {isPedometerAvailable}
+      </Text>
+      <Text style={styles.steps}>Steps taken: {stepCount}</Text>
+      
+      {!user && (
         <TouchableOpacity style={styles.button} onPress={handleLogin}>
-          <Text style={styles.buttonText}>ログイン</Text>
+          <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
-      ) : (
-        <View>
-          <Text style={styles.title}>歩数計</Text>
-          {isPedometerAvailable ? (
-            <Text style={styles.steps}>{stepCount} 歩</Text>
-          ) : (
-            <Text style={styles.error}>歩数計を利用できません</Text>
-          )}
-          <TouchableOpacity style={styles.button} onPress={handleLogout}>
-            <Text style={styles.buttonText}>ログアウト</Text>
-          </TouchableOpacity>
-        </View>
       )}
     </View>
   );
@@ -105,31 +92,28 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    padding: 20,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
   },
+  status: {
+    marginBottom: 10,
+  },
   steps: {
-    fontSize: 48,
+    fontSize: 18,
     marginBottom: 20,
   },
   button: {
     backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 8,
-    marginTop: 10,
+    padding: 10,
+    borderRadius: 5,
   },
   buttonText: {
-    color: '#FFFFFF',
+    color: 'white',
     fontSize: 16,
-    textAlign: 'center',
-  },
-  error: {
-    color: 'red',
-    marginBottom: 20,
   },
 });
 
